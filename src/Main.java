@@ -1,91 +1,86 @@
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Scanner;
 
 public class Main {
 
-    public static void main (String[] args) {
-        Scanner scan = new Scanner(System.in);
-        int n = scan.nextInt();
-        String skip = scan.nextLine();
+    static int[] list;
 
-        HashMap<Integer, Integer> union = new HashMap<>();
-        ArrayList<ArrayList<Integer>> queue = new ArrayList<>();
-        ArrayList<Integer> output = new ArrayList<>();
-        String line;
-        String[] lparts;
-        int index = -1;
-        int totalListsPopped = 0;
-        for (int i = 0; i < n; i++) {
-            //TODO: Scan and parse groups
+    public static void main(String[] args) throws IOException {
+        Scanner scan = new Scanner(System.in);
+        String line = scan.nextLine();
+        String[] lparts = line.split(" ");
+
+        int N = Integer.parseInt(lparts[0]);
+        int M = Integer.parseInt(lparts[1]);
+
+        ArrayList<String> output = new ArrayList<>();
+        list = new int[N + 2];
+        for (int i = 1; i <= N; i++) {
+            list[i] = i;
+        }
+        list[0] = -1;
+        list[N + 1] = -1;
+
+        int L, R;
+        int newL, newR;
+        StringBuilder builder;
+        for (int i = 0; i < M; i++) {
             line = scan.nextLine();
             lparts = line.split(" ");
-            int k = Integer.parseInt(lparts[0]);
-            int first = Integer.parseInt(lparts[1]);
-            union.put(first, first);
-            int key;
-            for (int j = 2; j <= k; j++) {
-                key = Integer.parseInt(lparts[j]);
-                union.put(key, first);
+            L = Integer.parseInt(lparts[0]);
+            R = Integer.parseInt(lparts[1]);
+            if (R < L) {
+                int temp = L;
+                L = R;
+                R = temp;
             }
-        }
-        line = scan.nextLine();
-        while (line.charAt(0) != 'S') {
-            if (line.charAt(1) == 'u') { // push operation
-                lparts = line.split(" ");
-                int key = Integer.parseInt(lparts[1]);
-                try {
-                    int found = find(union, key);
-                    int place = union.get(found);
-                    if (place > 0) { // this indicates we haven't yet added an element of this group
-                        union.replace(found, index);
-                        index--;
-                        ArrayList<Integer> node = new ArrayList<>();
-                        node.add(key);
-                        queue.add(node);
-                    } else {
-                        place = -1 * place - 1; // the index of the group
-                        ArrayList<Integer> node = queue.get(place - totalListsPopped);
-                        node.add(key);
-                    }
-                } catch (NullPointerException e) {
-                    ArrayList<Integer> node = new ArrayList<>();
-                    node.add(key);
-                    queue.add(node);                            
+            newL = L - 1;
+            newR = R + 1;
+            newL = solve(newL);
+            newR = solve(newR);
+            if (L == R) {
+                if (newR < newL) {
+                    list[L] = newR;
+                } else {
+                    list[L] = newL;
                 }
-            } else { // pop operation
-                if (queue.size() != 0) {
-                    ArrayList<Integer> node = queue.get(0);
-                    int num = node.get(0);
-                    output.add(num);
-                    if (node.size() > 1) {
-                        node.remove(0);
-                    } else { // last node present in group
-                        try {
-                            int found = find(union, num);
-                            union.replace(found, found);
-                        } catch (NullPointerException e) {
-                            // uh yeah, catch.
-                        }
-                        queue.remove(0);
-                        totalListsPopped++;
-                    }
+            } else {
+                if (L != 0) {
+                    list[L] = newR;
+                }
+                if (R != (N + 1)) {
+                    list[R] = newL;
                 }
             }
-            line = scan.nextLine();
+            builder = new StringBuilder(15);
+            if (newL < 0) {
+                builder.append("* ");
+            } else {
+                builder.append(newL);
+                builder.append(" ");
+            }
+            if (newR < 0) {
+                builder.append("*\n");
+            } else {
+                builder.append(newR);
+                builder.append("\n");
+            }
+            output.add(builder.toString());
         }
-        for (int o: output) {
-            System.out.println(o);
+        for (String o: output) {
+            System.out.print(o);
         }
     }
 
-    public static int find(HashMap<Integer, Integer> map, int k) {
-        int v = map.get(k);
-        if (k == v || v < 0) {
-            return k;
+    public static int solve(int index) {
+        if (index < 0 || list[index] == index) {
+            return index;
         }
-        int x = find(map, v);
-        map.replace(k, x);
-        return x;
+        list[index] = solve(list[index]);
+        return list[index];
     }
 }
+
